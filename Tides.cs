@@ -14,7 +14,7 @@ using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Tides", "RFC1920", "1.0.0")]
+    [Info("Tides", "RFC1920", "1.0.1")]
     [Description("Standard tidal event during the Rust day")]
     class Tides : RustPlugin
     {
@@ -55,15 +55,40 @@ namespace Oxide.Plugins
                 ["hightide"] = "High tide...",
                 ["lowtide"]  = "Low tide..."
             }, this);
-        }
-
-        void Loaded()
-        {
+            LoadConfig();
             CheckCurrentTime();
         }
         #endregion
 
         #region Main
+        private void CheckCurrentTime()
+        {
+            if(globalToggle)
+            {
+                try
+                {
+                    float time = TOD_Sky.Instance.Cycle.Hour;
+                    if(time >= configData.Sunset || (time >= 0 && time < configData.Sunrise))
+                    {
+                        if(!oceanUp)
+                        {
+                            SetOceanLevel(true);
+                        }
+                    }
+                    else if(time >= configData.Sunrise && time < configData.Sunset)
+                    {
+                        if(!oceanDn)
+                        {
+                            SetOceanLevel(false);
+                        }
+                    }
+                }
+                catch {}
+            }
+            startup = false;
+            timeCheck = timer.Once(configData.speed, CheckCurrentTime);
+        }
+
         [Command("ocean")]
         void cmdOceanLevel(IPlayer player, string command, string[] args)
         {
@@ -121,30 +146,6 @@ namespace Oxide.Plugins
             Puts($"Setting ocean level to {currentLevel.ToString()}");
 #endif
             ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet(), "env.oceanlevel " + currentLevel.ToString());
-        }
-
-        private void CheckCurrentTime()
-        {
-            if(globalToggle)
-            {
-                float time = TOD_Sky.Instance.Cycle.Hour;
-                if(time >= configData.Sunset || (time >= 0 && time < configData.Sunrise))
-                {
-                    if(!oceanUp)
-                    {
-                        SetOceanLevel(true);
-                    }
-                }
-                else if(time >= configData.Sunrise && time < configData.Sunset)
-                {
-                    if(!oceanDn)
-                    {
-                        SetOceanLevel(false);
-                    }
-                }
-            }
-            startup = false;
-            timeCheck = timer.Once(configData.speed, CheckCurrentTime);
         }
         #endregion
 
@@ -214,9 +215,14 @@ namespace Oxide.Plugins
             if(!configData.UseMessageBroadcast && !configData.UseGUIAnnouncements) return;
             foreach(var player in BasePlayer.activePlayerList)
             {
-                if(configData.UseMessageBroadcast) SendReply(player, lang.GetMessage(key, this, player.UserIDString));
-                if(GUIAnnouncements && configData.UseGUIAnnouncements) GUIAnnouncements?.Call("CreateAnnouncement", lang.GetMessage(key, this, player.UserIDString), BannerColor, TextColor, player);
-                SendReply(player, lang.GetMessage(key, this, player.UserIDString));
+                if(configData.UseMessageBroadcast)
+                {
+                    SendReply(player, lang.GetMessage(key, this, player.UserIDString));
+                }
+                if(GUIAnnouncements && configData.UseGUIAnnouncements)
+                {
+                    GUIAnnouncements?.Call("CreateAnnouncement", lang.GetMessage(key, this, player.UserIDString), BannerColor, TextColor, player);
+                }
             }
         }
         #endregion
