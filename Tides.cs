@@ -1,20 +1,13 @@
 //#define DEBUG
-using System;
-using System.Collections.Generic;
-using UnityEngine;
 using Oxide.Core;
-using System.Text;
-using System.Linq;
-using Oxide.Core.Plugins;
-using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Oxide.Game.Rust.Cui;
 using Oxide.Core.Libraries.Covalence;
+using Oxide.Core.Plugins;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Oxide.Plugins
 {
-    [Info("Tides", "RFC1920", "1.0.1")]
+    [Info("Tides", "RFC1920", "1.0.2")]
     [Description("Standard tidal event during the Rust day")]
     class Tides : RustPlugin
     {
@@ -56,6 +49,10 @@ namespace Oxide.Plugins
                 ["lowtide"]  = "Low tide..."
             }, this);
             LoadConfig();
+        }
+
+        void OnServerInitialized()
+        {
             CheckCurrentTime();
         }
         #endregion
