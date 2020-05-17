@@ -36,6 +36,7 @@ You can selectively use either message broadcast to all players, or use the GUIA
 - `ocean check` -- Displays the current level as set by the plugin.
 - `ocean X force` -- Force the ocean level to X.  This also disables the timed setting.
 - `ocean reset` -- Re-enable the timed setting of ocean level (to undo "force").
+- `ocean X auto` -- Force the ocean level to X and (re)enable the timed setting.
 
 ## Permissions
 

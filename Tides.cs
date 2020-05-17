@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Oxide.Plugins
 {
-    [Info("Tides", "RFC1920", "1.0.2")]
+    [Info("Tides", "RFC1920", "1.0.3")]
     [Description("Standard tidal event during the Rust day")]
     class Tides : RustPlugin
     {
@@ -94,9 +94,13 @@ namespace Oxide.Plugins
             {
                 if(args.Length > 1)
                 {
-                    if(args[1] == "force")
+                    if(args[1] == "force" || args[1] == "fixed")
                     {
                         globalToggle = false;
+                    }
+                    else if(args[1] == "auto")
+                    {
+                        globalToggle = true;
                     }
                 }
                 if(args[0] == "reset")
