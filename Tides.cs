@@ -1,4 +1,23 @@
-//#define DEBUG
+#region License (GPL v2)
+/*
+    Tides - Standard tidal event for the Rust day
+    Copyright (c) 2020-2023 RFC1920 <desolationoutpostpve@gmail.com>
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License v2.0.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+    Optionally you can also view the license at <http://www.gnu.org/licenses/>.
+*/
+#endregion License (GPL v2)
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using Oxide.Core.Plugins;
@@ -7,23 +26,22 @@ using System.Collections.Generic;
 
 namespace Oxide.Plugins
 {
-    [Info("Tides", "RFC1920", "1.0.3")]
+    [Info("Tides", "RFC1920", "1.0.4")]
     [Description("Standard tidal event during the Rust day")]
-    class Tides : RustPlugin
+    internal class Tides : RustPlugin
     {
         #region vars
         [PluginReference]
-        Plugin GUIAnnouncements;
+        private Plugin GUIAnnouncements;
 
         private bool globalToggle = true;
-        private bool oceanUp = false;
-        private bool oceanDn = false;
+        private bool oceanUp;
+        private bool oceanDn;
         private bool startup = true;
         private Timer timeCheck;
-        private float currentLevel = 0f;
-
-        string BannerColor = "Blue";
-        string TextColor = "Yellow";
+        private float currentLevel;
+        private string BannerColor = "Blue";
+        private string TextColor = "Yellow";
 
         private ConfigData configData;
         private const string permOceanLevel = "tides.use";
@@ -35,7 +53,7 @@ namespace Oxide.Plugins
         #endregion
 
         #region init
-        void Init()
+        private void Init()
         {
             AddCovalenceCommand("ocean", "cmdOceanLevel");
             permission.RegisterPermission(permOceanLevel, this);
@@ -46,12 +64,12 @@ namespace Oxide.Plugins
                 ["setlevel"] = "Set ocean level to {0}!",
                 ["current"] = "Ocean level currently {0}.",
                 ["hightide"] = "High tide...",
-                ["lowtide"]  = "Low tide..."
+                ["lowtide"] = "Low tide..."
             }, this);
             LoadConfig();
         }
 
-        void OnServerInitialized()
+        private void OnServerInitialized()
         {
             CheckCurrentTime();
         }
@@ -60,58 +78,58 @@ namespace Oxide.Plugins
         #region Main
         private void CheckCurrentTime()
         {
-            if(globalToggle)
+            if (globalToggle)
             {
                 try
                 {
                     float time = TOD_Sky.Instance.Cycle.Hour;
-                    if(time >= configData.Sunset || (time >= 0 && time < configData.Sunrise))
+                    if (time >= configData.Sunset || (time >= 0 && time < configData.Sunrise))
                     {
-                        if(!oceanUp)
+                        if (!oceanUp)
                         {
                             SetOceanLevel(true);
                         }
                     }
-                    else if(time >= configData.Sunrise && time < configData.Sunset)
+                    else if (time >= configData.Sunrise && time < configData.Sunset)
                     {
-                        if(!oceanDn)
+                        if (!oceanDn)
                         {
                             SetOceanLevel(false);
                         }
                     }
                 }
-                catch {}
+                catch { }
             }
             startup = false;
             timeCheck = timer.Once(configData.speed, CheckCurrentTime);
         }
 
         [Command("ocean")]
-        void cmdOceanLevel(IPlayer player, string command, string[] args)
+        private void cmdOceanLevel(IPlayer player, string command, string[] args)
         {
-            if(!player.HasPermission(permOceanLevel)) { Message(player, "notauthorized"); return; }
-            if(args.Length > 0)
+            if (!player.HasPermission(permOceanLevel)) { Message(player, "notauthorized"); return; }
+            if (args.Length > 0)
             {
-                if(args.Length > 1)
+                if (args.Length > 1)
                 {
-                    if(args[1] == "force" || args[1] == "fixed")
+                    if (args[1] == "force" || args[1] == "fixed")
                     {
                         globalToggle = false;
                     }
-                    else if(args[1] == "auto")
+                    else if (args[1] == "auto")
                     {
                         globalToggle = true;
                     }
                 }
-                if(args[0] == "reset")
+                if (args[0] == "reset")
                 {
                     globalToggle = true;
                 }
-                else if(args[0] == "check")
+                else if (args[0] == "check")
                 {
                     Message(player, "current", currentLevel.ToString());
                 }
-                else if(float.Parse(args[0]) > -1)
+                else if (float.Parse(args[0]) > -1)
                 {
                     ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet(), "env.oceanlevel " + args[0]);
                     Message(player, "setlevel", args[0]);
@@ -121,21 +139,21 @@ namespace Oxide.Plugins
 
         private void SetOceanLevel(bool up = true)
         {
-            if(up) currentLevel += configData.increment;
-            else   currentLevel -= configData.increment;
+            if (up) currentLevel += configData.increment;
+            else currentLevel -= configData.increment;
 
-            if(currentLevel >= configData.maxLevel)
+            if (currentLevel >= configData.maxLevel)
             {
                 oceanUp = true;
                 currentLevel = configData.maxLevel;
-                if(!startup) MessageToAll("hightide");
+                if (!startup) MessageToAll("hightide");
                 return;
             }
-            else if(currentLevel <= configData.minLevel)
+            else if (currentLevel <= configData.minLevel)
             {
                 oceanDn = true;
                 currentLevel = configData.minLevel;
-                if(!startup) MessageToAll("lowtide");
+                if (!startup) MessageToAll("lowtide");
                 return;
             }
             else
@@ -143,15 +161,17 @@ namespace Oxide.Plugins
                 oceanUp = false;
                 oceanDn = false;
             }
-#if DEBUG
-            Puts($"Setting ocean level to {currentLevel.ToString()}");
-#endif
+            if (configData.Debug)
+            {
+                Puts($"Setting ocean level to {currentLevel}");
+            }
+
             ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet(), "env.oceanlevel " + currentLevel.ToString());
         }
         #endregion
 
         #region config
-        class ConfigData
+        private class ConfigData
         {
             [JsonProperty(PropertyName = "Sunrise")]
             public float Sunrise { get; set; }
@@ -177,6 +197,8 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "UseGUIAnnouncements")]
             public bool UseGUIAnnouncements { get; set; }
 
+            public bool Debug { get; set; }
+
             public VersionNumber Version { get; set; }
         }
 
@@ -185,7 +207,7 @@ namespace Oxide.Plugins
             base.LoadConfig();
             configData = Config.ReadObject<ConfigData>();
 
-            if(configData.Version < Version)
+            if (configData.Version < Version)
             {
                 configData.Version = Version;
             }
@@ -211,16 +233,16 @@ namespace Oxide.Plugins
 
         protected override void SaveConfig() => Config.WriteObject(configData, true);
 
-        void MessageToAll(string key)
+        private void MessageToAll(string key)
         {
-            if(!configData.UseMessageBroadcast && !configData.UseGUIAnnouncements) return;
-            foreach(var player in BasePlayer.activePlayerList)
+            if (!configData.UseMessageBroadcast && !configData.UseGUIAnnouncements) return;
+            foreach (var player in BasePlayer.activePlayerList)
             {
-                if(configData.UseMessageBroadcast)
+                if (configData.UseMessageBroadcast)
                 {
                     SendReply(player, lang.GetMessage(key, this, player.UserIDString));
                 }
-                if(GUIAnnouncements && configData.UseGUIAnnouncements)
+                if (GUIAnnouncements && configData.UseGUIAnnouncements)
                 {
                     GUIAnnouncements?.Call("CreateAnnouncement", lang.GetMessage(key, this, player.UserIDString), BannerColor, TextColor, player);
                 }

@@ -13,6 +13,7 @@ Standard tidal event for the Rust day
   "minLevel": 0.0,
   "UseMessageBroadcast": false,
   "UseGUIAnnouncements": false,
+  "Debug": false,
   "Version": {
     "Major": 1,
     "Minor": 0,
