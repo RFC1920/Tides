@@ -23,10 +23,11 @@ using Oxide.Core.Libraries.Covalence;
 using Oxide.Core.Plugins;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System;
 
 namespace Oxide.Plugins
 {
-    [Info("Tides", "RFC1920", "1.0.4")]
+    [Info("Tides", "RFC1920", "1.0.5")]
     [Description("Standard tidal event during the Rust day")]
     internal class Tides : RustPlugin
     {
@@ -83,10 +84,25 @@ namespace Oxide.Plugins
                 try
                 {
                     float time = TOD_Sky.Instance.Cycle.Hour;
+                    float mod = 0;
+                    if (configData.RandomizeEvents)
+                    {
+                        mod = (float)Math.Round(UnityEngine.Random.Range(-configData.RandomizationAmount/2, configData.RandomizationAmount/2), 2);
+                        time += mod;
+                    }
                     if (time >= configData.Sunset || (time >= 0 && time < configData.Sunrise))
                     {
                         if (!oceanUp)
                         {
+                            if (configData.Debug)
+                            {
+                                Puts($"Sunset time {time}");
+                                if (configData.RandomizeEvents)
+                                {
+                                    Puts($"Randomized to add {mod} hours");
+                                }
+                            }
+
                             SetOceanLevel(true);
                         }
                     }
@@ -94,6 +110,14 @@ namespace Oxide.Plugins
                     {
                         if (!oceanDn)
                         {
+                            if (configData.Debug)
+                            {
+                                Puts($"Sunrise time {time}");
+                                if (configData.RandomizeEvents)
+                                {
+                                    Puts($"Randomized to add {mod} hours");
+                                }
+                            }
                             SetOceanLevel(false);
                         }
                     }
@@ -197,6 +221,12 @@ namespace Oxide.Plugins
             [JsonProperty(PropertyName = "UseGUIAnnouncements")]
             public bool UseGUIAnnouncements { get; set; }
 
+            [JsonProperty(PropertyName = "RandomizeSunriseAndSunset")]
+            public bool RandomizeEvents { get; set; }
+
+            [JsonProperty(PropertyName = "RandomizationAmount")]
+            public float RandomizationAmount { get; set; }
+
             public bool Debug { get; set; }
 
             public VersionNumber Version { get; set; }
@@ -211,6 +241,7 @@ namespace Oxide.Plugins
             {
                 configData.Version = Version;
             }
+            if (configData.RandomizationAmount == 0) configData.RandomizationAmount = 1;
 
             Config.WriteObject(configData, true);
         }
@@ -225,6 +256,8 @@ namespace Oxide.Plugins
                 speed = 1f,
                 maxLevel = 3f,
                 minLevel = 0f,
+                RandomizeEvents = false,
+                RandomizationAmount = 1f,
                 UseMessageBroadcast = false,
                 UseGUIAnnouncements = false,
                 Version = Version
