@@ -14,8 +14,8 @@ Standard tidal event for the Rust day
   "RandomizeSunriseAndSunset": false,
   "RandomizationAmount": 1.0,
   "UseMessageBroadcast": false,
-  "UseGUIAnnouncements": true,
-  "Debug": true,
+  "UseGUIAnnouncements": false,
+  "Debug": false,
   "Version": {
     "Major": 1,
     "Minor": 0,
